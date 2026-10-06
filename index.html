@@ -174,6 +174,15 @@
   .field input:focus, .field select:focus { border-color: var(--accent); outline: none; }
   .amount input { font-size: 1.6rem; font-weight: 600; min-height: 58px; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .catmanage { margin-top: 4px; }
+  .catmanage h3 { font-size: .9rem; font-weight: 600; margin: 14px 0 8px; color: var(--muted); }
+  .catmanage h3:first-child { margin-top: 0; }
+  .catrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .catrow:first-of-type { border-top: 0; }
+  .catrow .cname { font-size: .92rem; }
+  .catrow button { min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); background: transparent; cursor: pointer; font-size: .82rem; color: var(--expense); }
+  .catrow button.confirm { background: var(--expense); border-color: var(--expense); color: #fff; }
+  .addcatbtn { min-height: 40px; padding: 0 16px; border-radius: 14px; border: 1.5px dashed var(--line); background: transparent; color: var(--accent); cursor: pointer; font-size: .88rem; width: 100%; margin-top: 10px; }
   .checkfield { display: flex; align-items: center; gap: 10px; margin: 0 0 12px 2px; cursor: pointer; }
   .checkfield input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
   .checkfield span { font-size: .92rem; color: var(--ink); }
@@ -451,6 +460,16 @@
     </section>
 
     <section class="panel" data-panel="settings">
+      <h2>จัดการหมวดหมู่</h2>
+      <div class="card catmanage">
+        <h3>หมวดรายจ่าย</h3>
+        <div id="catListExpense"></div>
+        <button type="button" class="addcatbtn" id="addCatExpense">➕ เพิ่มหมวดรายจ่าย</button>
+        <h3>หมวดรายรับ</h3>
+        <div id="catListIncome"></div>
+        <button type="button" class="addcatbtn" id="addCatIncome">➕ เพิ่มหมวดรายรับ</button>
+      </div>
+
       <h2>การตั้งค่า</h2>
       <div class="card">
         <div class="setrow"><div><div class="t">จำนวนรายการทั้งหมด</div><div class="s" id="setCount">0 รายการ</div></div></div>
@@ -583,6 +602,18 @@
   </div>
 </div>
 
+<!-- add-category sheet (avoids window.prompt, which some embedded viewers block) -->
+<div class="sheet" id="catAddSheet" role="dialog" aria-modal="true" aria-labelledby="catAddTitle">
+  <div class="grabber"></div>
+  <h2 id="catAddTitle">เพิ่มหมวดหมู่ใหม่</h2>
+  <label class="field"><span>ชื่อหมวดหมู่</span><input id="catAddName" type="text" maxlength="40" autocomplete="off" placeholder="เช่น ค่าเทอม"></label>
+  <p class="err" id="catAddErr" role="alert"></p>
+  <div class="actions">
+    <button type="button" class="primary" id="catAddSave">บันทึกหมวดหมู่</button>
+    <button type="button" class="ghost" id="catAddCancel">ยกเลิก</button>
+  </div>
+</div>
+
 <!-- monthly spending-limit edit sheet -->
 <div class="sheet" id="budgetSheet" role="dialog" aria-modal="true" aria-labelledby="budgetFormTitle">
   <div class="grabber"></div>
@@ -690,6 +721,11 @@
   try { var ccraw = localStorage.getItem(CCKEY); if (ccraw) customCats = Object.assign({ expense: [], income: [] }, JSON.parse(ccraw)); } catch (e) {}
   function persistCustomCats() { try { localStorage.setItem(CCKEY, JSON.stringify(customCats)); } catch (e) {} scheduleSync(); }
   var ADD_CAT_VALUE = '__add_new__';
+  var HKEY = 'expense-tracker-hiddencats-v1';
+  var hiddenCats = { expense: [], income: [] };
+  try { var hraw = localStorage.getItem(HKEY); if (hraw) hiddenCats = Object.assign({ expense: [], income: [] }, JSON.parse(hraw)); } catch (e) {}
+  function persistHidden() { try { localStorage.setItem(HKEY, JSON.stringify(hiddenCats)); } catch (e) {} }
+  function visibleCats(t) { return CATS[t].filter(function (c) { return hiddenCats[t].indexOf(c) === -1; }).concat(customCats[t] || []); }
   var icon = function (c) { return ICON[c] || '✨'; };
   var KEY = 'expense-tracker-v1';
   var DKEY = 'expense-tracker-debts-v1';
@@ -760,7 +796,7 @@
   function openSheet(el) { $('backdrop').classList.add('show'); el.classList.add('show'); }
   function closeSheet(el) { $('backdrop').classList.remove('show'); el.classList.remove('show'); }
   $('backdrop').addEventListener('click', function () {
-    [$('sheet'), $('debtSheet'), $('paySheet'), $('goalSheet'), $('saveSheet'), $('saveTxSheet'), $('budgetSheet')].forEach(function (s) { s.classList.remove('show'); });
+    [$('sheet'), $('debtSheet'), $('paySheet'), $('goalSheet'), $('saveSheet'), $('saveTxSheet'), $('budgetSheet'), $('catAddSheet')].forEach(function (s) { s.classList.remove('show'); });
     $('backdrop').classList.remove('show');
     resetForm();
   });
@@ -774,23 +810,85 @@
 
   function fillCats(selected) {
     var sel = $('cat'); sel.innerHTML = '';
-    CATS[type].concat(customCats[type] || []).forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = icon(c) + '  ' + c; sel.appendChild(o); });
+    visibleCats(type).forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = icon(c) + '  ' + c; sel.appendChild(o); });
     var addOpt = document.createElement('option'); addOpt.value = ADD_CAT_VALUE; addOpt.textContent = '➕ เพิ่มหมวดหมู่ใหม่'; sel.appendChild(addOpt);
-    if (selected && (CATS[type].indexOf(selected) > -1 || (customCats[type] || []).indexOf(selected) > -1)) sel.value = selected;
+    if (selected && visibleCats(type).indexOf(selected) > -1) sel.value = selected;
   }
-  $('cat').addEventListener('change', function () {
-    if ($('cat').value !== ADD_CAT_VALUE) return;
-    var prev = (CATS[type][0]) || '';
-    var name = window.prompt('ตั้งชื่อหมวดหมู่ใหม่ (' + (type === 'expense' ? 'รายจ่าย' : 'รายรับ') + ')');
-    name = name ? name.trim() : '';
-    if (!name) { fillCats(prev); return; }
-    var exists = CATS[type].indexOf(name) > -1 || (customCats[type] || []).indexOf(name) > -1;
-    if (!exists) {
-      customCats[type] = customCats[type] || [];
-      customCats[type].push(name);
+  var catAddType = 'expense';
+  var catAddCallback = null;
+  function commitCategory(t, name) {
+    if (hiddenCats[t].indexOf(name) > -1) {
+      hiddenCats[t] = hiddenCats[t].filter(function (c) { return c !== name; });
+      persistHidden();
+    } else if (CATS[t].indexOf(name) === -1 && (customCats[t] || []).indexOf(name) === -1) {
+      customCats[t] = customCats[t] || [];
+      customCats[t].push(name);
       persistCustomCats();
     }
-    fillCats(name);
+  }
+  function addCategoryFlow(t, afterAdd) {
+    catAddType = t;
+    catAddCallback = afterAdd || null;
+    $('catAddName').value = '';
+    $('catAddErr').textContent = '';
+    $('catAddTitle').textContent = 'เพิ่มหมวดหมู่ใหม่ (' + (t === 'expense' ? 'รายจ่าย' : 'รายรับ') + ')';
+    openSheet($('catAddSheet'));
+    return null;
+  }
+  function closeCatAddSheet() {
+    $('catAddSheet').classList.remove('show');
+    var otherOpen = [$('sheet'), $('debtSheet'), $('paySheet'), $('goalSheet'), $('saveSheet'), $('saveTxSheet'), $('budgetSheet')].some(function (s) { return s.classList.contains('show'); });
+    if (!otherOpen) $('backdrop').classList.remove('show');
+  }
+  $('catAddCancel').addEventListener('click', closeCatAddSheet);
+  $('catAddSave').addEventListener('click', function () {
+    var name = $('catAddName').value.trim();
+    if (!name) { $('catAddErr').textContent = 'ใส่ชื่อหมวดหมู่'; return; }
+    commitCategory(catAddType, name);
+    closeCatAddSheet();
+    if (catAddCallback) catAddCallback(name);
+  });
+  function deleteCategory(t, name) {
+    if (name === DEBT_CAT) return;
+    if ((customCats[t] || []).indexOf(name) > -1) {
+      customCats[t] = customCats[t].filter(function (c) { return c !== name; });
+      persistCustomCats();
+    } else {
+      hiddenCats[t] = hiddenCats[t] || [];
+      if (hiddenCats[t].indexOf(name) === -1) hiddenCats[t].push(name);
+      persistHidden();
+    }
+  }
+  var pendingDeleteCat = null;
+  function renderCatManage() {
+    ['expense', 'income'].forEach(function (t) {
+      var box = $(t === 'expense' ? 'catListExpense' : 'catListIncome');
+      box.innerHTML = '';
+      visibleCats(t).forEach(function (c) {
+        if (c === DEBT_CAT) return;
+        var row = document.createElement('div'); row.className = 'catrow';
+        var nm = document.createElement('span'); nm.className = 'cname'; nm.textContent = icon(c) + '  ' + c;
+        var key = t + '|' + c;
+        var del = document.createElement('button'); del.type = 'button';
+        del.className = pendingDeleteCat === key ? 'confirm' : '';
+        del.textContent = pendingDeleteCat === key ? 'ยืนยันลบ' : 'ลบ';
+        del.addEventListener('click', function () {
+          if (pendingDeleteCat === key) {
+            deleteCategory(t, c); pendingDeleteCat = null; renderCatManage();
+          } else { pendingDeleteCat = key; renderCatManage(); }
+        });
+        row.appendChild(nm); row.appendChild(del);
+        box.appendChild(row);
+      });
+    });
+  }
+  $('addCatExpense').addEventListener('click', function () { addCategoryFlow('expense', function () { renderCatManage(); }); });
+  $('addCatIncome').addEventListener('click', function () { addCategoryFlow('income', function () { renderCatManage(); }); });
+  $('cat').addEventListener('change', function () {
+    if ($('cat').value !== ADD_CAT_VALUE) return;
+    var prev = visibleCats(type)[0] || '';
+    fillCats(prev);
+    addCategoryFlow(type, function (name) { fillCats(name); });
   });
   function setType(t, keepCat) {
     type = t;
@@ -1378,6 +1476,7 @@
     $('setCount').textContent = tx.length + ' รายการ';
     $('setDebtCount').textContent = debts.length + ' รายการ';
     $('setSaveCount').textContent = saves.length + ' รายการ';
+    renderCatManage();
     var stMap = { off: 'ยังไม่ได้ตั้งค่า Supabase — ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น', connecting: 'กำลังเชื่อมต่อ...', synced: 'เชื่อมต่อแล้ว ข้อมูลถูกบันทึกขึ้นคลาวด์อัตโนมัติ', error: 'เชื่อมต่อไม่สำเร็จ ตรวจสอบ URL/คีย์/ตาราง แล้วรีเฟรชหน้า' };
     $('cloudStatusText').textContent = stMap[cloudStatus];
     if (document.activeElement !== $('accessKeyInput')) $('accessKeyInput').value = accessKey;
@@ -1391,7 +1490,7 @@
     window.claude.use('downloads').then(function (d) { downloadsCap = d; }).catch(function () { downloadsCap = null; });
   }
   async function exportData() {
-    var payload = { app: 'expense-tracker', exportedAt: new Date().toISOString(), tx: tx, debts: debts, saves: saves, budget: budget, customCats: customCats };
+    var payload = { app: 'expense-tracker', exportedAt: new Date().toISOString(), tx: tx, debts: debts, saves: saves, budget: budget, customCats: customCats, hiddenCats: hiddenCats };
     var json = JSON.stringify(payload, null, 2);
     var d = new Date();
     var filename = 'expense-tracker-backup-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.json';
@@ -1418,11 +1517,12 @@
       var incomingSaves = Array.isArray(data.saves) ? data.saves : [];
       var incomingBudget = (data.budget && typeof data.budget === 'object') ? Object.assign({ startDay: 1, amount: 0 }, data.budget) : { startDay: 1, amount: 0 };
       var incomingCustomCats = (data.customCats && typeof data.customCats === 'object') ? Object.assign({ expense: [], income: [] }, data.customCats) : { expense: [], income: [] };
+      var incomingHidden = (data.hiddenCats && typeof data.hiddenCats === 'object') ? Object.assign({ expense: [], income: [] }, data.hiddenCats) : { expense: [], income: [] };
       var ok = window.confirm('นำเข้าข้อมูล ' + data.tx.length + ' รายการรายรับรายจ่าย, ' + data.debts.length + ' รายการหนี้ และ ' + incomingSaves.length + ' เป้าหมายออมเงิน จะแทนที่ข้อมูลปัจจุบันทั้งหมด ยืนยันหรือไม่?');
       e.target.value = '';
       if (!ok) return;
-      tx = data.tx; debts = data.debts; saves = incomingSaves; budget = incomingBudget; customCats = incomingCustomCats;
-      persist(); persistDebts(); persistSaves(); persistBudget(); persistCustomCats();
+      tx = data.tx; debts = data.debts; saves = incomingSaves; budget = incomingBudget; customCats = incomingCustomCats; hiddenCats = incomingHidden;
+      persist(); persistDebts(); persistSaves(); persistBudget(); persistCustomCats(); persistHidden();
       renderAll(); renderSettings(); renderDebts(); renderSavings();
       showSaved('กู้คืนข้อมูลแล้ว');
     };
@@ -1430,7 +1530,7 @@
   });
 
   $('clearAll').addEventListener('click', function () {
-    if (pendingClear) { tx = []; debts = []; saves = []; budget = { startDay: 1, amount: 0 }; customCats = { expense: [], income: [] }; persist(); persistDebts(); persistSaves(); persistBudget(); persistCustomCats(); pendingClear = false; renderAll(); renderSettings(); renderDebts(); renderSavings(); }
+    if (pendingClear) { tx = []; debts = []; saves = []; budget = { startDay: 1, amount: 0 }; customCats = { expense: [], income: [] }; hiddenCats = { expense: [], income: [] }; persist(); persistDebts(); persistSaves(); persistBudget(); persistCustomCats(); persistHidden(); pendingClear = false; renderAll(); renderSettings(); renderDebts(); renderSavings(); }
     else { pendingClear = true; renderSettings(); }
   });
 
