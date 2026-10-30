@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>บัญชีรายรับรายจ่าย</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -145,6 +146,24 @@
   .goalnote { margin: 8px 0 0; font-size: .85rem; color: rgba(255,255,255,.9); }
 
   /* monthly spending-limit card (home) */
+  .batchrow { padding: 12px 0; border-top: 1px solid var(--line); }
+  .batchrow:first-child { border-top: 0; }
+  .batchrow .b1 { display: flex; gap: 8px; align-items: center; }
+  .batchrow .b2 { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; margin-top: 8px; }
+  .batchrow .b3 { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 8px; }
+  .batchrow input, .batchrow select { width: 100%; min-width: 0; min-height: 42px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .batchrow input:focus, .batchrow select:focus { border-color: var(--accent); outline: none; }
+  .batchrow .bx { flex: none; width: 38px; min-height: 38px; border-radius: 50%; border: 1.5px solid var(--line); background: transparent; color: var(--expense); cursor: pointer; }
+  .batchrow .btype { flex: none; min-height: 42px; padding: 0 12px; border-radius: 12px; border: 0; cursor: pointer; font-weight: 600; background: var(--expense-soft); color: var(--expense); }
+  .batchrow .btype.inc { background: var(--income-soft); color: var(--income); }
+  .batchsum { display: flex; justify-content: space-between; padding: 12px 2px 4px; margin-top: 4px; border-top: 2px solid var(--line); font-weight: 600; }
+  .quickcard { margin-top: 16px; }
+  .quickcard .qrow { display: flex; gap: 8px; }
+  .quickcard input { flex: 1; min-width: 0; min-height: 48px; padding: 8px 14px; border: 2px solid var(--line); border-radius: 16px; background: var(--surface); }
+  .quickcard input:focus { border-color: var(--accent); outline: none; }
+  .quickcard button { flex: none; min-height: 48px; padding: 0 18px; border: 0; border-radius: 16px; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
+  .quickcard .qhint { margin: 8px 0 0 4px; font-size: .8rem; color: var(--muted); }
+  .quickcard .qerr { margin: 6px 0 0 4px; font-size: .85rem; color: var(--expense); min-height: 0; }
   .budgetcard { margin-top: 16px; }
   .budgetcard .bhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
   .budgetcard .label2 { margin: 0; font-size: .92rem; font-weight: 600; color: var(--ink); }
@@ -335,6 +354,91 @@
   @media (prefers-reduced-motion: reduce) {
     .split .in, .split .out, .toast, .sheet, .backdrop, .goalbar i { transition: none; }
   }
+
+  /* ===== Peach & coral sticker theme ===== */
+  :root {
+    --bg: #FDE8D6; --surface: #FFFFFF; --ink: #1E1B1B; --muted: #7A6258; --line: #E8CDB9; --outline: #1E1B1B;
+    --income: #23805A; --income-soft: #DDF3E8; --expense: #D6455D; --expense-soft: #FFE0E3;
+    --accent: #EE7878; --accent-ink: #1E1B1B; --focus: #1E1B1B;
+    --hero-a: #F58F8F; --hero-b: #F58F8F; --ok: #2FB27A; --ok-ink: #FFFFFF;
+    --debt: #A8620A; --debt-soft: #FFE9C2;
+    --save: #1B7BA3; --save-soft: #DDF1F9; --save-a: #A9DDF0; --save-b: #A9DDF0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #241A17; --surface: #33251F; --ink: #FFEBDD; --muted: #D0AE9D; --line: #54413A; --outline: #FFD2BE;
+      --income: #6FE0AA; --income-soft: #1E3A2E; --expense: #FF8CA0; --expense-soft: #4A2530;
+      --accent: #FF8F8F; --accent-ink: #2A1A18; --focus: #FFD2BE;
+      --debt: #F0B94C; --debt-soft: #4A3815; --save: #7DD3F2; --save-soft: #1D3944;
+      --ok: #6FE0AA; --ok-ink: #1E1B1B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #241A17; --surface: #33251F; --ink: #FFEBDD; --muted: #D0AE9D; --line: #54413A; --outline: #FFD2BE;
+    --income: #6FE0AA; --income-soft: #1E3A2E; --expense: #FF8CA0; --expense-soft: #4A2530;
+    --accent: #FF8F8F; --accent-ink: #2A1A18; --focus: #FFD2BE;
+    --debt: #F0B94C; --debt-soft: #4A3815; --save: #7DD3F2; --save-soft: #1D3944;
+    --ok: #6FE0AA; --ok-ink: #1E1B1B;
+  }
+  .topbar h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.01em; }
+  h2 { font-weight: 700; padding-bottom: 6px; border-bottom: 2px dotted var(--line); }
+  .sheet h2 { border-bottom: 0; padding-bottom: 0; }
+  .iconbtn { color: var(--ink); border: 2px solid var(--outline); box-shadow: 0 2px 0 var(--outline); }
+  .card, .savecard, .debtcard, .statcard { border: 2px solid var(--outline); border-radius: 22px; box-shadow: 0 3px 0 var(--outline); }
+  .item, .setrow, .catrow, .goalrow, .batchrow, .efcard .efbar, .budgetcard .bfoot { border-top-style: dotted; border-top-width: 2px; }
+  .goaltotal, .batchsum { border-top: 2px dotted var(--outline); }
+  .chip { border: 2px solid var(--outline); border-radius: 16px; }
+  .summary, .goalcard, .savehero { border: 2px solid var(--outline); box-shadow: 0 4px 0 var(--outline); border-radius: 26px; color: #1E1B1B; }
+  .summary { background: #F58F8F; }
+  .goalcard { background: #FFC97A; }
+  .savehero { background: #A9DDF0; }
+  .summary::after, .goalcard::after, .savehero::after { background: rgba(255,255,255,.35); }
+  .summary .label, .totals p, .avgspend, .goalcard .label, .goalnote, .savehero .label, .savenote { color: rgba(30,27,27,.85); }
+  .goalcard .amt, .savehero .amt, .totals strong, .avgspend b { color: #1E1B1B; }
+  .goalcard .amt span, .savehero .amt span { opacity: .75; }
+  .balance { color: #1E1B1B; }
+  .balance.neg { color: #8A1230; }
+  .avgspend { border-top: 2px dotted rgba(30,27,27,.45); }
+  .totals .dot { background: #fff; border: 2px solid #1E1B1B; width: 12px; height: 12px; }
+  .totals .t-out .dot { background: #1E1B1B; }
+  .split, .goalbar, .savebar { background: rgba(255,255,255,.6); border: 2px solid #1E1B1B; }
+  .split .in { background: #fff; }
+  .split .out { background: #1E1B1B; }
+  .goalbar i, .savebar i { background: #1E1B1B; }
+  .goalcard .editgoal { background: #fff; color: #1E1B1B; border: 2px solid #1E1B1B; font-weight: 600; }
+  .bbar, .bar, .savecard .sbar { border: 2px solid var(--outline); background: var(--surface); }
+  .bbar i { background: var(--income); }
+  .bar i { background: var(--expense); }
+  .budgetcard .editgoal2, .ghost, .addcatbtn { border: 2px solid var(--outline); color: var(--ink); }
+  .addcatbtn { border-style: dashed; }
+  .field input, .field select, .goalrow input, .batchrow input, .batchrow select, .quickcard input { border: 2px solid var(--outline); }
+  .field input:focus, .field select:focus, .quickcard input:focus { box-shadow: 0 3px 0 var(--accent); }
+  .primary, .quickcard button { background: var(--accent); color: var(--accent-ink); border: 2px solid var(--outline); box-shadow: 0 3px 0 var(--outline); font-weight: 700; }
+  .primary:active, .quickcard button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--outline); }
+  .primary.debtbtn { background: #FFC97A; color: #1E1B1B; box-shadow: 0 3px 0 var(--outline); }
+  .primary.savebtn { background: #A9DDF0; color: #1E1B1B; box-shadow: 0 3px 0 var(--outline); }
+  .seg { border: 2px solid var(--outline); background: var(--surface); }
+  .seg button[aria-pressed="true"].exp { background: var(--expense); color: #fff; }
+  .seg button[aria-pressed="true"].inc { background: var(--income); color: #fff; }
+  .fab { background: var(--accent); color: var(--accent-ink); border: 2px solid var(--outline); box-shadow: 0 4px 0 var(--outline); font-weight: 700; }
+  .fab.debtmode { background: #FFC97A; color: #1E1B1B; box-shadow: 0 4px 0 var(--outline); }
+  .fab.savemode { background: #A9DDF0; color: #1E1B1B; box-shadow: 0 4px 0 var(--outline); }
+  .fab:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--outline); }
+  .tabbar { border-top: 2px solid var(--outline); box-shadow: none; }
+  .tabbar button[aria-current="true"] { background: #FFC9C0; color: #1E1B1B; box-shadow: inset 0 0 0 2px var(--outline); }
+  .tabbar button[data-tab="debts"][aria-current="true"] { background: #FFE0A8; color: #1E1B1B; }
+  .tabbar button[data-tab="savings"][aria-current="true"] { background: #CDEBF7; color: #1E1B1B; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .tabbar button[aria-current="true"], :root:not([data-theme="light"]) .tabbar button[data-tab="debts"][aria-current="true"], :root:not([data-theme="light"]) .tabbar button[data-tab="savings"][aria-current="true"] { background: #4A3029; color: var(--ink); }
+  }
+  :root[data-theme="dark"] .tabbar button[aria-current="true"], :root[data-theme="dark"] .tabbar button[data-tab="debts"][aria-current="true"], :root[data-theme="dark"] .tabbar button[data-tab="savings"][aria-current="true"] { background: #4A3029; color: var(--ink); }
+  .backdrop { background: rgba(40,20,15,.45); }
+  .sheet { border: 2px solid var(--outline); border-bottom: 0; border-radius: 28px 28px 0 0; }
+  .sheet .grabber { background: var(--outline); opacity: .35; }
+  .toast { border: 3px solid var(--outline); }
+  .item .btns button, .debtcard .dbtns button, .savecard .sbtns button, .catrow button { border-width: 2px; }
+  .statcard .k { font-weight: 500; }
+  .quickcard .qhint { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -364,6 +468,15 @@
           <p class="t-out"><i class="dot"></i>รายจ่าย<strong class="num" id="totalOut">฿0</strong></p>
         </div>
         <p class="avgspend" id="avgSpend"></p>
+      </div>
+
+      <div class="card quickcard">
+        <div class="qrow">
+          <input id="quickText" type="text" autocomplete="off" placeholder="พิมพ์ เช่น ชาบู 200 กาแฟ 65">
+          <button type="button" id="quickGo">เพิ่ม</button>
+        </div>
+        <p class="qerr" id="quickErr" role="alert"></p>
+        <p class="qhint">ใส่วันที่ได้ เช่น "กาแฟ 65 เมื่อวาน" หรือ "ข้าว 50 25/10" ระบบจะเดาหมวดให้ แล้วให้ตรวจก่อนบันทึก</p>
       </div>
 
       <div class="card budgetcard">
@@ -474,6 +587,15 @@
         <div class="setrow"><div><div class="t">จำนวนรายการทั้งหมด</div><div class="s" id="setCount">0 รายการ</div></div></div>
         <div class="setrow"><div><div class="t">จำนวนหนี้ที่บันทึกไว้</div><div class="s" id="setDebtCount">0 รายการ</div></div></div>
         <div class="setrow"><div><div class="t">จำนวนเป้าหมายเงินออม</div><div class="s" id="setSaveCount">0 รายการ</div></div></div>
+        <div class="setrow"><div><div class="t">สถานะฐานข้อมูลคลาวด์</div><div class="s" id="cloudStatusText"></div></div></div>
+        <div class="setrow" id="accessKeyRow" style="flex-direction:column;align-items:stretch;gap:8px;">
+          <div><div class="t">รหัสเข้าถึงข้อมูลของคุณ</div><div class="s">ใช้รหัสเดียวกันบนเครื่อง/เบราว์เซอร์อื่นเพื่อดูข้อมูลชุดเดียวกัน เก็บรหัสนี้ไว้ให้ดี ห้ามให้คนอื่น</div></div>
+          <input id="accessKeyInput" type="text" autocomplete="off" spellcheck="false" style="width:100%;min-height:46px;padding:8px 12px;border:2px solid var(--line);border-radius:14px;background:var(--surface);font-size:.82rem;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="settxt" id="copyAccessKey" type="button">คัดลอกรหัส</button>
+            <button class="settxt" id="applyAccessKey" type="button">ใช้รหัสนี้ดึงข้อมูล</button>
+          </div>
+        </div>
         <div class="setrow"><div><div class="t">ที่เก็บข้อมูล</div><div class="s">บันทึกไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ซิงก์ข้ามอุปกรณ์ หากเปลี่ยนเบราว์เซอร์/ล้างแคชข้อมูลจะหาย ควรสำรองไว้เป็นระยะ</div></div></div>
         <div class="setrow">
           <div><div class="t">สำรองข้อมูลเป็นไฟล์</div><div class="s">ดาวน์โหลดไฟล์สำรองรายการทั้งหมดเก็บไว้กันข้อมูลหาย</div></div>
@@ -604,6 +726,19 @@
   </div>
 </div>
 
+<!-- batch quick-add review sheet -->
+<div class="sheet" id="batchSheet" role="dialog" aria-modal="true" aria-labelledby="batchTitle">
+  <div class="grabber"></div>
+  <h2 id="batchTitle">ตรวจสอบรายการ</h2>
+  <div id="batchRows"></div>
+  <div class="batchsum"><span id="batchCount">0 รายการ</span><span class="num" id="batchTotal">฿0</span></div>
+  <p class="err" id="batchErr" role="alert"></p>
+  <div class="actions">
+    <button type="button" class="primary" id="batchSave">บันทึกทั้งหมด</button>
+    <button type="button" class="ghost" id="batchCancel">ยกเลิก</button>
+  </div>
+</div>
+
 <!-- edit-category sheet (rename + change emoji) -->
 <div class="sheet" id="catEditSheet" role="dialog" aria-modal="true" aria-labelledby="catEditTitle">
   <div class="grabber"></div>
@@ -652,6 +787,66 @@
 
 <script>
 (function () {
+  /* ===== ตั้งค่าฐานข้อมูลของคุณเอง (Supabase) =====
+     1. ไปที่ supabase.com/dashboard สร้างโปรเจกต์ฟรี
+     2. ไปที่ Settings > API คัดลอก "Project URL" และ "anon public" key (หรือ "Publishable key")
+     3. แทนที่ค่าด้านล่างนี้ด้วยของคุณ แล้วอัปโหลดไฟล์นี้ขึ้น GitHub Pages
+     ถ้ายังไม่ใส่ค่า แอปจะทำงานแบบเดิม (เก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ sync ขึ้นคลาวด์) */
+  var SUPABASE_URL = 'YOUR_SUPABASE_URL';
+  var SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+  var AKEY = 'expense-tracker-access-key';
+  var accessKey = localStorage.getItem(AKEY);
+  if (!accessKey) {
+    accessKey = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+    try { localStorage.setItem(AKEY, accessKey); } catch (e) {}
+  }
+  var cloudReady = !!(window.supabase && SUPABASE_URL.indexOf('YOUR_SUPABASE_URL') === -1 && SUPABASE_ANON_KEY.indexOf('YOUR_SUPABASE_ANON_KEY') === -1);
+  var supa = cloudReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+  var syncTimer = null;
+  var suppressSync = false;
+  var cloudStatus = cloudReady ? 'connecting' : 'off'; // off | connecting | synced | error
+  function scheduleSync() {
+    if (!cloudReady || suppressSync) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(pushToCloud, 800);
+  }
+  function currentPayload() { return { tx: tx, debts: debts, saves: saves, budget: budget, customCats: customCats, hiddenCats: hiddenCats, customIcons: customIcons, learned: learned }; }
+  function pushToCloud() {
+    if (!cloudReady) return;
+    supa.from('app_data').upsert({ access_key: accessKey, payload: currentPayload(), updated_at: new Date().toISOString() })
+      .then(function (res) { cloudStatus = res.error ? 'error' : 'synced'; if (typeof renderSettings === 'function' && activeTab === 'settings') renderSettings(); })
+      .catch(function () { cloudStatus = 'error'; });
+  }
+  function pullFromCloud() {
+    if (!cloudReady) return Promise.resolve(false);
+    return supa.from('app_data').select('payload').eq('access_key', accessKey).maybeSingle()
+      .then(function (res) {
+        if (res.error) { cloudStatus = 'error'; return false; }
+        if (res.data && res.data.payload) {
+          var p = res.data.payload;
+          if (Array.isArray(p.tx)) tx = p.tx;
+          if (Array.isArray(p.debts)) debts = p.debts;
+          if (Array.isArray(p.saves)) saves = p.saves;
+          if (p.budget && typeof p.budget === 'object') budget = Object.assign({ startDay: 1, amount: 0 }, p.budget);
+          if (p.customCats && typeof p.customCats === 'object') customCats = Object.assign({ expense: [], income: [] }, p.customCats);
+          if (p.hiddenCats && typeof p.hiddenCats === 'object') hiddenCats = Object.assign({ expense: [], income: [] }, p.hiddenCats);
+          if (p.customIcons && typeof p.customIcons === 'object') customIcons = p.customIcons;
+          if (p.learned && typeof p.learned === 'object') learned = p.learned;
+          suppressSync = true;
+          dedupeCustomCats();
+          persist(); persistDebts(); persistSaves(); persistBudget(); persistCustomCats(); persistHidden(); persistIcons(); persistLearned();
+          suppressSync = false;
+          cloudStatus = 'synced';
+          return true;
+        }
+        pushToCloud();
+        cloudStatus = 'synced';
+        return false;
+      })
+      .catch(function () { cloudStatus = 'error'; return false; });
+  }
+
   var MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   var MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   var TAB_TITLE = { home: 'รายรับรายจ่าย', cats: 'แยกตามหมวดหมู่', debts: 'หนี้สิน', savings: 'ออมเงิน', stats: 'สถิติ', settings: 'การตั้งค่า' };
@@ -668,12 +863,12 @@
   var CCKEY = 'expense-tracker-customcats-v1';
   var customCats = { expense: [], income: [] };
   try { var ccraw = localStorage.getItem(CCKEY); if (ccraw) customCats = Object.assign({ expense: [], income: [] }, JSON.parse(ccraw)); } catch (e) {}
-  function persistCustomCats() { try { localStorage.setItem(CCKEY, JSON.stringify(customCats)); } catch (e) {} }
+  function persistCustomCats() { try { localStorage.setItem(CCKEY, JSON.stringify(customCats)); } catch (e) {} scheduleSync(); }
   var ADD_CAT_VALUE = '__add_new__';
   var HKEY = 'expense-tracker-hiddencats-v1';
   var hiddenCats = { expense: [], income: [] };
   try { var hraw = localStorage.getItem(HKEY); if (hraw) hiddenCats = Object.assign({ expense: [], income: [] }, JSON.parse(hraw)); } catch (e) {}
-  function persistHidden() { try { localStorage.setItem(HKEY, JSON.stringify(hiddenCats)); } catch (e) {} }
+  function persistHidden() { try { localStorage.setItem(HKEY, JSON.stringify(hiddenCats)); } catch (e) {} scheduleSync(); }
   var OTHER_CAT = 'อื่นๆ';
   function dedupeCustomCats() {
     var changed = false;
@@ -704,8 +899,33 @@
   var IKEY = 'expense-tracker-caticons-v1';
   var customIcons = {};
   try { var iraw = localStorage.getItem(IKEY); if (iraw) customIcons = JSON.parse(iraw) || {}; } catch (e) {}
-  function persistIcons() { try { localStorage.setItem(IKEY, JSON.stringify(customIcons)); } catch (e) {} }
+  function persistIcons() { try { localStorage.setItem(IKEY, JSON.stringify(customIcons)); } catch (e) {} scheduleSync(); }
   var icon = function (c) { return customIcons[c] || ICON[c] || '✨'; };
+  var LKEY = 'expense-tracker-learned-v1';
+  var learned = {};
+  try { var lraw = localStorage.getItem(LKEY); if (lraw) learned = JSON.parse(lraw) || {}; } catch (e) { learned = {}; }
+  function persistLearned() { try { localStorage.setItem(LKEY, JSON.stringify(learned)); } catch (e) {} scheduleSync(); }
+  function learnKey(note) { return String(note || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function learnFrom(t, note, cat) {
+    var k = learnKey(note);
+    if (!k || k.length > 40 || !cat) return;
+    delete learned[k];
+    learned[k] = { t: t, c: cat };
+    var keys = Object.keys(learned);
+    if (keys.length > 500) delete learned[keys[0]];
+    persistLearned();
+  }
+  function lookupLearned(note) {
+    var n = learnKey(note);
+    if (!n) return null;
+    var hit = learned[n] || null;
+    if (!hit) {
+      var best = 0;
+      Object.keys(learned).forEach(function (k) { if (k.length >= 2 && k.length > best && n.indexOf(k) > -1) { best = k.length; hit = learned[k]; } });
+    }
+    if (hit && hit.t && hit.c && visibleCats(hit.t).indexOf(hit.c) > -1) return hit;
+    return null;
+  }
   var KEY = 'expense-tracker-v1';
   var DKEY = 'expense-tracker-debts-v1';
 
@@ -716,21 +936,21 @@
 
   var tx = [];
   try { var raw = localStorage.getItem(KEY); if (raw) tx = JSON.parse(raw) || []; } catch (e) { tx = []; }
-  function persist() { try { localStorage.setItem(KEY, JSON.stringify(tx)); } catch (e) {} }
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(tx)); } catch (e) {} scheduleSync(); }
 
   var debts = [];
   try { var draw = localStorage.getItem(DKEY); if (draw) debts = JSON.parse(draw) || []; } catch (e) { debts = []; }
-  function persistDebts() { try { localStorage.setItem(DKEY, JSON.stringify(debts)); } catch (e) {} }
+  function persistDebts() { try { localStorage.setItem(DKEY, JSON.stringify(debts)); } catch (e) {} scheduleSync(); }
 
   var SKEY = 'expense-tracker-savings-v1';
   var saves = [];
   try { var sraw = localStorage.getItem(SKEY); if (sraw) saves = JSON.parse(sraw) || []; } catch (e) { saves = []; }
-  function persistSaves() { try { localStorage.setItem(SKEY, JSON.stringify(saves)); } catch (e) {} }
+  function persistSaves() { try { localStorage.setItem(SKEY, JSON.stringify(saves)); } catch (e) {} scheduleSync(); }
 
   var BKEY = 'expense-tracker-budget-v1';
   var budget = { startDay: 1, amount: 0 };
   try { var braw = localStorage.getItem(BKEY); if (braw) budget = Object.assign({ startDay: 1, amount: 0 }, JSON.parse(braw)); } catch (e) {}
-  function persistBudget() { try { localStorage.setItem(BKEY, JSON.stringify(budget)); } catch (e) {} }
+  function persistBudget() { try { localStorage.setItem(BKEY, JSON.stringify(budget)); } catch (e) {} scheduleSync(); }
 
 
   var now = new Date();
@@ -775,7 +995,7 @@
   function openSheet(el) { $('backdrop').classList.add('show'); el.classList.add('show'); }
   function closeSheet(el) { $('backdrop').classList.remove('show'); el.classList.remove('show'); }
   $('backdrop').addEventListener('click', function () {
-    [$('sheet'), $('debtSheet'), $('paySheet'), $('goalSheet'), $('saveSheet'), $('saveTxSheet'), $('budgetSheet'), $('catAddSheet'), $('catEditSheet')].forEach(function (s) { s.classList.remove('show'); });
+    [$('sheet'), $('debtSheet'), $('paySheet'), $('goalSheet'), $('saveSheet'), $('saveTxSheet'), $('budgetSheet'), $('catAddSheet'), $('catEditSheet'), $('batchSheet')].forEach(function (s) { s.classList.remove('show'); });
     $('backdrop').classList.remove('show');
     resetForm();
   });
@@ -870,7 +1090,8 @@
   function openCatEdit(t, name) {
     if (name === DEBT_CAT) return;
     catEditType = t; catEditOldName = name;
-    $('catEditEmoji').value = icon(name);
+    $('catEditEmoji').value = customIcons[name] || ICON[name] || '';
+    setTimeout(function () { try { $('catEditEmoji').select(); } catch (e) {} }, 50);
     $('catEditName').value = name;
     $('catEditErr').textContent = '';
     $('catEditTitle').textContent = 'แก้ไขหมวดหมู่ (' + (t === 'expense' ? 'รายจ่าย' : 'รายรับ') + ')';
@@ -895,6 +1116,8 @@
       }
       persistCustomCats(); persistHidden();
       tx.forEach(function (x) { if (x.cat === oldName) x.cat = newName; });
+      Object.keys(learned).forEach(function (k) { if (learned[k].c === oldName) learned[k].c = newName; });
+      persistLearned();
       persist();
     }
     delete customIcons[oldName];
@@ -1501,6 +1724,10 @@
     $('setDebtCount').textContent = debts.length + ' รายการ';
     $('setSaveCount').textContent = saves.length + ' รายการ';
     renderCatManage();
+    var stMap = { off: 'ยังไม่ได้ตั้งค่า Supabase — ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น', connecting: 'กำลังเชื่อมต่อ...', synced: 'เชื่อมต่อแล้ว ข้อมูลถูกบันทึกขึ้นคลาวด์อัตโนมัติ', error: 'เชื่อมต่อไม่สำเร็จ ตรวจสอบ URL/คีย์/ตาราง แล้วรีเฟรชหน้า' };
+    $('cloudStatusText').textContent = stMap[cloudStatus];
+    if (document.activeElement !== $('accessKeyInput')) $('accessKeyInput').value = accessKey;
+    $('accessKeyRow').style.display = cloudReady ? '' : 'none';
     var btn = $('clearAll');
     btn.textContent = pendingClear ? 'กดอีกครั้งเพื่อยืนยันการลบ' : 'ล้างข้อมูล';
     btn.className = 'danger' + (pendingClear ? ' confirm' : '');
@@ -1510,7 +1737,7 @@
     window.claude.use('downloads').then(function (d) { downloadsCap = d; }).catch(function () { downloadsCap = null; });
   }
   async function exportData() {
-    var payload = { app: 'expense-tracker', exportedAt: new Date().toISOString(), tx: tx, debts: debts, saves: saves, budget: budget, customCats: customCats, hiddenCats: hiddenCats, customIcons: customIcons };
+    var payload = { app: 'expense-tracker', exportedAt: new Date().toISOString(), tx: tx, debts: debts, saves: saves, budget: budget, customCats: customCats, hiddenCats: hiddenCats, customIcons: customIcons, learned: learned };
     var json = JSON.stringify(payload, null, 2);
     var d = new Date();
     var filename = 'expense-tracker-backup-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.json';
@@ -1542,8 +1769,8 @@
       var ok = window.confirm('นำเข้าข้อมูล ' + data.tx.length + ' รายการรายรับรายจ่าย, ' + data.debts.length + ' รายการหนี้ และ ' + incomingSaves.length + ' เป้าหมายออมเงิน จะแทนที่ข้อมูลปัจจุบันทั้งหมด ยืนยันหรือไม่?');
       e.target.value = '';
       if (!ok) return;
-      tx = data.tx; debts = data.debts; saves = incomingSaves; budget = incomingBudget; customCats = incomingCustomCats; hiddenCats = incomingHidden; customIcons = incomingIcons;
-      persist(); persistDebts(); persistSaves(); persistBudget(); persistCustomCats(); persistHidden(); persistIcons();
+      tx = data.tx; debts = data.debts; saves = incomingSaves; budget = incomingBudget; customCats = incomingCustomCats; hiddenCats = incomingHidden; customIcons = incomingIcons; learned = (data.learned && typeof data.learned === 'object') ? data.learned : {};
+      persist(); persistDebts(); persistSaves(); persistBudget(); persistCustomCats(); persistHidden(); persistIcons(); persistLearned();
       renderAll(); renderSettings(); renderDebts(); renderSavings();
       showSaved('กู้คืนข้อมูลแล้ว');
     };
@@ -1551,7 +1778,7 @@
   });
 
   $('clearAll').addEventListener('click', function () {
-    if (pendingClear) { tx = []; debts = []; saves = []; budget = { startDay: 1, amount: 0 }; customCats = { expense: [], income: [] }; hiddenCats = { expense: [], income: [] }; customIcons = {}; persist(); persistDebts(); persistSaves(); persistBudget(); persistCustomCats(); persistHidden(); persistIcons(); pendingClear = false; renderAll(); renderSettings(); renderDebts(); renderSavings(); }
+    if (pendingClear) { tx = []; debts = []; saves = []; budget = { startDay: 1, amount: 0 }; customCats = { expense: [], income: [] }; hiddenCats = { expense: [], income: [] }; customIcons = {}; learned = {}; persistLearned(); persist(); persistDebts(); persistSaves(); persistBudget(); persistCustomCats(); persistHidden(); persistIcons(); pendingClear = false; renderAll(); renderSettings(); renderDebts(); renderSavings(); }
     else { pendingClear = true; renderSettings(); }
   });
 
@@ -1570,6 +1797,194 @@
   }
 
   /* ---------- transaction form save ---------- */
+  /* ---------- quick text entry ---------- */
+  var KW_EXPENSE = {
+    'อาหาร': ['ข้าว','ก๋วยเตี๋ยว','ชาบู','หมูกระทะ','กาแฟ','ชานม','ชา','น้ำ','ขนม','อาหาร','กิน','เบอร์เกอร์','ส้มตำ','ปิ้งย่าง','บุฟเฟ่','ร้านอาหาร','มื้อ','เครื่องดื่ม','ไก่','หมู','ผลไม้','พิซซ่า','สุกี้','ต้มยำ','ข้าวมัน','โจ๊ก','ไอติม','ไอศกรีม','เค้ก','ขนมปัง','เซเว่น','7-11'],
+    'เดินทาง': ['น้ำมัน','แท็กซี่','รถเมล์','รถไฟ','bts','mrt','วิน','ค่ารถ','ทางด่วน','แกร็บ','grab','จอดรถ','เดินทาง','มอไซค์','มอเตอร์ไซค์','โบลท์','bolt','เรือ','ตั๋ว'],
+    'ที่พัก/ค่าน้ำค่าไฟ': ['ค่าเช่า','ค่าน้ำ','ค่าไฟ','ค่าห้อง','อินเทอร์เน็ต','เน็ต','ค่าโทร','ค่าเช่าห้อง','หอพัก'],
+    'ช้อปปิ้ง': ['ช้อป','เสื้อ','กางเกง','รองเท้า','ของใช้','lazada','shopee','ลาซาด้า','ช้อปปี้','กระเป๋า','สบู่','แชมพู','ผงซักฟอก'],
+    'สุขภาพ': ['ยา','หมอ','โรงพยาบาล','ฟัน','คลินิก','วิตามิน','ตรวจ','ฟิตเนส'],
+    'บันเทิง': ['หนัง','เกม','เที่ยว','คอนเสิร์ต','netflix','เน็ตฟลิกซ์','เหล้า','เบียร์','คาราโอเกะ','ร้องเพลง','สตรีม','youtube','spotify']
+  };
+  var KW_INCOME = ['เงินเดือน','โอที','ot','โบนัส','รายได้','ได้รับ','ขายของ','ค่าจ้าง','ได้เงิน','ค่าคอม','คอมมิชชัน'];
+  function parseQuick(text) {
+    var s = ' ' + text.trim() + ' ';
+    var low = s.toLowerCase();
+    var date = null, dateErr = '';
+    var n = new Date();
+    function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    var m;
+    if ((m = s.match(/(?<![\d,.])(\d{1,2})(?:\/(\d{1,2})(?:\/(\d{2,4}))?|-(\d{1,2})-(\d{2,4}))(?!\d)/))) {
+      var dd = +m[1], mm = +(m[2] || m[4]), yy = (m[3] || m[5]) ? +(m[3] || m[5]) : n.getFullYear();
+      if (yy < 100) yy += 2000; else if (yy > 2400) yy -= 543;
+      var dt = new Date(yy, mm - 1, dd);
+      if (mm >= 1 && mm <= 12 && dt.getMonth() === mm - 1 && dt.getDate() === dd) { date = ymd(dt); s = s.replace(m[0], ' '); }
+      else dateErr = 'วันที่ไม่ถูกต้อง';
+    }
+    if (!date && !dateErr) {
+      if ((m = s.match(/วันที่\s*(\d{1,2})/))) {
+        var dt2 = new Date(n.getFullYear(), n.getMonth(), +m[1]);
+        if (+m[1] >= 1 && dt2.getMonth() === n.getMonth()) { date = ymd(dt2); s = s.replace(m[0], ' '); }
+        else dateErr = 'วันที่ไม่ถูกต้อง';
+      } else if (/เมื่อวานซืน/.test(s)) { var a = new Date(n); a.setDate(a.getDate() - 2); date = ymd(a); s = s.replace('เมื่อวานซืน', ' '); }
+      else if (/เมื่อวาน/.test(s)) { var b = new Date(n); b.setDate(b.getDate() - 1); date = ymd(b); s = s.replace('เมื่อวาน', ' '); }
+      else if (/วันนี้/.test(s)) { date = ymd(n); s = s.replace('วันนี้', ' '); }
+    }
+    if (dateErr) return { err: dateErr };
+    var nums = s.match(/\d[\d,]*(?:\.\d+)?/g);
+    if (!nums) return { err: 'ไม่พบจำนวนเงิน เช่น ชาบู 200' };
+    var raw = nums[nums.length - 1];
+    var amount = parseFloat(raw.replace(/,/g, ''));
+    if (!(amount > 0)) return { err: 'จำนวนเงินต้องมากกว่า 0' };
+    var idx = s.lastIndexOf(raw);
+    s = s.slice(0, idx) + ' ' + s.slice(idx + raw.length);
+    s = s.replace(/บาท|฿|บ\.|วันที่/g, ' ');
+    var note = s.replace(/\s+/g, ' ').trim();
+    var lowNote = (note + ' ' + text).toLowerCase();
+    var isIncome = KW_INCOME.some(function (k) { return lowNote.indexOf(k) > -1; });
+    var cat = null, t = isIncome ? 'income' : 'expense';
+    function direct(tt) {
+      var found = null;
+      visibleCats(tt).forEach(function (c) { if (c !== OTHER_CAT && c !== DEBT_CAT && lowNote.indexOf(c.toLowerCase()) > -1 && (!found || c.length > found.length)) found = c; });
+      return found;
+    }
+    var lr = lookupLearned(note);
+    if (lr) { t = lr.t; cat = lr.c; }
+    if (!cat) cat = direct(t);
+    if (!cat && !isIncome) { var inc = direct('income'); if (inc) { t = 'income'; cat = inc; } }
+    if (!cat && t === 'income') {
+      cat = /โอที|\bot\b/.test(lowNote) ? 'โอที' : /เงินเดือน/.test(lowNote) ? 'เงินเดือน' : 'รายได้เสริม';
+    }
+    if (!cat && t === 'expense') {
+      var bestLen = 0;
+      Object.keys(KW_EXPENSE).forEach(function (c) {
+        if (visibleCats('expense').indexOf(c) === -1) return;
+        KW_EXPENSE[c].forEach(function (k) { if (k.length > bestLen && lowNote.indexOf(k) > -1) { bestLen = k.length; cat = c; } });
+      });
+    }
+    if (!cat || visibleCats(t).indexOf(cat) === -1) cat = OTHER_CAT;
+    if (visibleCats(t).indexOf(cat) === -1) cat = visibleCats(t)[0];
+    return { type: t, amount: amount, cat: cat, date: date || todayStr(), note: note };
+  }
+  function splitQuick(text) {
+    var chunks = text.split(/[\n;]+|,(?!\d)/), items = [];
+    chunks.forEach(function (chunk) {
+      var re = /(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{1,2}-\d{1,2}-\d{2,4})|(วันที่\s*\d{1,2})|(เมื่อวานซืน|เมื่อวาน|วันนี้)|(\d+-\d+)|(\d[\d,]*(?:\.\d+)?)|([^\d]+?(?=\d|เมื่อวาน|วันนี้|วันที่|$)|[^\d]+)/g;
+      var toks = [], m;
+      while ((m = re.exec(chunk)) !== null) {
+        if (m[0] === '') { re.lastIndex++; continue; }
+        if (m[1] || m[2] || m[3]) toks.push({ k: 'd', v: m[0] });
+        else if (m[5]) toks.push({ k: 'n', v: m[0] });
+        else toks.push({ k: 't', v: m[0] });
+      }
+      var cur = { text: '', amount: null, date: null }, list = [];
+      function flush() { if (cur.amount !== null || cur.text.trim()) list.push(cur); cur = { text: '', amount: null, date: null }; }
+      toks.forEach(function (tk) {
+        if (tk.k === 't') { if (cur.amount !== null) flush(); cur.text += tk.v; }
+        else if (tk.k === 'n') { if (cur.amount !== null) flush(); cur.amount = tk.v; }
+        else { cur.date = cur.date || tk.v; }
+      });
+      flush();
+      var dates = toks.filter(function (x) { return x.k === 'd'; });
+      list.forEach(function (it) { if (!it.date && dates.length === 1) it.date = dates[0].v; });
+      list.forEach(function (it) { items.push(it); });
+    });
+    return items;
+  }
+  var batchItems = [];
+  function renderBatch() {
+    var box = $('batchRows'); box.innerHTML = '';
+    batchItems.forEach(function (it, i) {
+      var row = document.createElement('div'); row.className = 'batchrow';
+      var b1 = document.createElement('div'); b1.className = 'b1';
+      var note = document.createElement('input'); note.type = 'text'; note.value = it.note; note.placeholder = 'รายการ'; note.maxLength = 80;
+      note.addEventListener('input', function () { it.note = note.value; });
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'bx'; x.textContent = '✕'; x.setAttribute('aria-label', 'ลบรายการนี้');
+      x.addEventListener('click', function () { batchItems.splice(i, 1); if (!batchItems.length) { closeBatch(); return; } renderBatch(); });
+      b1.appendChild(note); b1.appendChild(x);
+      var b2 = document.createElement('div'); b2.className = 'b2';
+      var amt = document.createElement('input'); amt.type = 'text'; amt.inputMode = 'decimal'; amt.value = String(it.amount);
+      amt.addEventListener('input', function () { it.amount = parseFloat(amt.value.replace(/,/g, '')) || 0; updateBatchSum(); });
+      var sel = document.createElement('select');
+      visibleCats(it.type).forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = icon(c) + '  ' + c; if (c === it.cat) o.selected = true; sel.appendChild(o); });
+      sel.addEventListener('change', function () { it.cat = sel.value; });
+      b2.appendChild(amt); b2.appendChild(sel);
+      var b3 = document.createElement('div'); b3.className = 'b3';
+      var dt = document.createElement('input'); dt.type = 'date'; dt.value = it.date;
+      dt.addEventListener('change', function () { it.date = dt.value; });
+      var tg = document.createElement('button'); tg.type = 'button'; tg.className = 'btype' + (it.type === 'income' ? ' inc' : '');
+      tg.textContent = it.type === 'income' ? 'รายรับ' : 'รายจ่าย';
+      tg.addEventListener('click', function () { it.type = it.type === 'income' ? 'expense' : 'income'; it.cat = OTHER_CAT; if (visibleCats(it.type).indexOf(it.cat) === -1) it.cat = visibleCats(it.type)[0]; renderBatch(); });
+      b3.appendChild(dt); b3.appendChild(tg);
+      row.appendChild(b1); row.appendChild(b2); row.appendChild(b3);
+      box.appendChild(row);
+    });
+    updateBatchSum();
+  }
+  function updateBatchSum() {
+    var total = 0;
+    batchItems.forEach(function (it) { total += it.type === 'income' ? it.amount : -it.amount; });
+    $('batchCount').textContent = batchItems.length + ' รายการ';
+    $('batchTotal').textContent = (total < 0 ? '-' : '') + fmt(Math.abs(total));
+  }
+  function closeBatch() { closeSheet($('batchSheet')); batchItems = []; }
+  $('batchCancel').addEventListener('click', closeBatch);
+  $('batchSave').addEventListener('click', function () {
+    if ($('batchSave').disabled) return;
+    $('batchErr').textContent = '';
+    for (var i = 0; i < batchItems.length; i++) {
+      var it = batchItems[i];
+      if (!(it.amount > 0)) { $('batchErr').textContent = 'รายการที่ ' + (i + 1) + ': ใส่จำนวนเงินที่มากกว่า 0'; return; }
+      if (!it.date) { $('batchErr').textContent = 'รายการที่ ' + (i + 1) + ': เลือกวันที่'; return; }
+    }
+    var base = Date.now();
+    batchItems.forEach(function (it, i) {
+      learnFrom(it.type, it.note, it.cat);
+      tx.push({ id: base + i, type: it.type, amount: Math.round(it.amount * 100) / 100, cat: it.cat, date: it.date, note: (it.note || '').trim(), excludeFromBudget: false });
+    });
+    persist();
+    var last = batchItems[batchItems.length - 1].date.split('-'); view = { y: +last[0], m: +last[1] - 1 };
+    var n = batchItems.length;
+    $('batchSave').disabled = true;
+    setTimeout(function () { $('batchSave').disabled = false; }, 1600);
+    pendingDelete = null;
+    renderAll();
+    showSaved('บันทึก ' + n + ' รายการแล้ว');
+    setTimeout(closeBatch, 500);
+  });
+  function quickAdd() {
+    var txt = $('quickText').value;
+    $('quickErr').textContent = '';
+    if (!txt.trim()) { $('quickErr').textContent = 'พิมพ์รายการก่อน เช่น ชาบู 200 กาแฟ 65'; return; }
+    var parts = splitQuick(txt), results = [];
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      if (p.amount === null) { $('quickErr').textContent = 'ไม่พบจำนวนเงินของ "' + p.text.trim() + '"'; return; }
+      var r = parseQuick((p.text + ' ' + p.amount + ' ' + (p.date || '')).trim());
+      if (r.err) { $('quickErr').textContent = (p.text.trim() ? '"' + p.text.trim() + '": ' : '') + r.err; return; }
+      results.push(r);
+    }
+    if (!results.length) { $('quickErr').textContent = 'ไม่พบจำนวนเงิน เช่น ชาบู 200'; return; }
+    if (results.length === 1) {
+      var r1 = results[0];
+      resetForm();
+      setType(r1.type, r1.cat);
+      $('amount').value = String(r1.amount);
+      $('date').value = r1.date;
+      $('note').value = r1.note;
+      $('formTitle').textContent = 'ตรวจสอบรายการ';
+      openSheet($('sheet'));
+    } else {
+      batchItems = results;
+      $('batchErr').textContent = '';
+      renderBatch();
+      openSheet($('batchSheet'));
+    }
+    $('quickText').value = '';
+  }
+  $('quickGo').addEventListener('click', quickAdd);
+  $('quickText').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); quickAdd(); } });
+
   function resetForm() {
     editId = null; $('amount').value = ''; $('note').value = ''; $('date').value = todayStr();
     $('excludeBudget').checked = false;
@@ -1601,6 +2016,7 @@
     if (!date) { $('err').textContent = 'เลือกวันที่ของรายการ'; return; }
     amt = Math.round(amt * 100) / 100;
     var rec = { type: type, amount: amt, cat: $('cat').value, date: date, note: $('note').value.trim(), excludeFromBudget: type === 'expense' && $('excludeBudget').checked };
+    learnFrom(type, rec.note, rec.cat);
     if (editId !== null) { tx = tx.map(function (x) { return x.id === editId ? Object.assign({ id: editId }, rec) : x; }); }
     else { rec.id = Date.now(); tx.push(rec); }
     persist();
@@ -1615,10 +2031,28 @@
   $('save').addEventListener('click', save);
   ['amount', 'note'].forEach(function (id) { $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); save(); } }); });
 
+  $('copyAccessKey').addEventListener('click', function () {
+    var v = accessKey;
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(function () { showSaved('คัดลอกรหัสแล้ว'); }, function () { $('accessKeyInput').select(); });
+    else { $('accessKeyInput').select(); }
+  });
+  $('applyAccessKey').addEventListener('click', function () {
+    var v = $('accessKeyInput').value.trim();
+    if (!v || v === accessKey) { showSaved('ใช้รหัสเดิมอยู่แล้ว'); return; }
+    if (!window.confirm('เปลี่ยนไปใช้รหัสนี้ แล้วดึงข้อมูลจากคลาวด์มาแทนที่ข้อมูลในเครื่อง ยืนยันหรือไม่?')) return;
+    accessKey = v;
+    try { localStorage.setItem(AKEY, accessKey); } catch (e) {}
+    cloudStatus = 'connecting'; renderSettings();
+    pullFromCloud().then(function () { renderAll(); renderSettings(); renderDebts(); renderSavings(); showSaved('ดึงข้อมูลแล้ว'); });
+  });
+
   $('date').value = todayStr();
   setType('expense');
   setTab('home');
   renderAll();
+  if (cloudReady) {
+    pullFromCloud().then(function () { renderAll(); renderDebts(); renderSavings(); if (activeTab === 'settings') renderSettings(); });
+  }
 })();
 </script>
 </body>
